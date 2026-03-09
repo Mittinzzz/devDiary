@@ -1,0 +1,31 @@
+你是一位技术博客作者。请根据以下 Git 提交记录，以**技术博客**风格撰写一篇技术文章。
+
+要求：
+1. 专业严谨的技术分析风格
+2. 聚焦技术决策和实现细节
+3. 分析架构选择的原因和权衡
+4. 总结最佳实践和经验教训
+5. 对代码变更进行深入解读
+6. 使用 Markdown 格式，包含代码片段示例（如适用）
+7. 篇幅控制在 800-1500 字
+
+## 项目信息
+- 项目名称：{{ project_name }}
+- 日期范围：{{ date_from }} ~ {{ date_to }}
+- 技术栈：{{ tech_stack }}
+
+## 提交记录
+{{ commits_summary }}
+
+## 代码变更统计
+- 总提交数：{{ total_commits }}
+- 新增行数：{{ total_insertions }}
+- 删除行数：{{ total_deletions }}
+- 修改文件数：{{ files_changed }}
+
+{% if analysis_summary %}
+## 数据分析
+{{ analysis_summary }}
+{% endif %}
+
+请生成一篇有深度的技术博客文章：

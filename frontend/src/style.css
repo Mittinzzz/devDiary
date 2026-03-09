@@ -1,0 +1,116 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary: #6366F1;
+  --primary-light: #8B5CF6;
+  --primary-lighter: #A78BFA;
+  --bg-dark: #0F172A;
+  --bg-surface: #1E293B;
+  --bg-surface-light: #334155;
+  --bg-glass: rgba(255, 255, 255, 0.05);
+  --text-primary: #F8FAFC;
+  --text-secondary: #CBD5E1;
+  --text-muted: #94A3B8;
+  --accent-green: #22C55E;
+  --accent-red: #EF4444;
+  --accent-yellow: #F59E0B;
+  --accent-blue: #3B82F6;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Montserrat', 'Inter', system-ui, sans-serif;
+  background: linear-gradient(135deg, #0F172A 0%, #1a1f3a 50%, #0F172A 100%);
+  min-height: 100vh;
+  color: var(--text-primary);
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.3);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.5);
+}
+
+/* Glass card utility */
+@layer components {
+  .glass-card {
+    @apply bg-surface-glass backdrop-blur-md rounded-xl border border-white/10;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+  }
+  .glass-card:hover {
+    border-color: rgba(99, 102, 241, 0.3);
+    box-shadow: 0 8px 32px rgba(99, 102, 241, 0.1);
+    transform: translateY(-2px);
+  }
+
+  .gradient-text {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, #6366F1, #8B5CF6, #A78BFA);
+  }
+
+  .btn-primary {
+    @apply px-6 py-2.5 rounded-lg font-semibold text-white transition-all duration-300;
+    background: linear-gradient(135deg, #6366F1, #8B5CF6);
+  }
+  .btn-primary:hover {
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
+    transform: translateY(-1px);
+  }
+  .btn-primary:active {
+    transform: scale(0.98);
+  }
+
+  .btn-secondary {
+    @apply px-4 py-2 rounded-lg font-medium text-gray-300 transition-all duration-300;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  .btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(99, 102, 241, 0.3);
+  }
+
+  .tag {
+    @apply px-2.5 py-1 rounded-full text-xs font-medium;
+    background: rgba(99, 102, 241, 0.15);
+    color: #A78BFA;
+    border: 1px solid rgba(99, 102, 241, 0.2);
+  }
+}
+
+/* Background pattern */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: radial-gradient(circle at 1px 1px, rgba(99, 102, 241, 0.03) 1px, transparent 0);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+#app {
+  position: relative;
+  z-index: 1;
+}

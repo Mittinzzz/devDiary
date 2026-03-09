@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }} - DevDiary</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+    <style>
+        {{ pygments_css }}
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Montserrat', system-ui, sans-serif;
+            background: linear-gradient(135deg, #0F172A 0%, #1a1f3a 50%, #0F172A 100%);
+            color: #F8FAFC;
+            min-height: 100vh;
+            line-height: 1.8;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image: radial-gradient(circle at 1px 1px, rgba(99, 102, 241, 0.03) 1px, transparent 0);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header {
+            margin-bottom: 3rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #6366F1, #8B5CF6, #A78BFA);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+        }
+
+        .meta {
+            display: flex;
+            gap: 1.5rem;
+            color: #94A3B8;
+            font-size: 0.9rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .tags {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-top: 1rem;
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            background: rgba(99, 102, 241, 0.15);
+            color: #A78BFA;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .content {
+            font-size: 1rem;
+            color: #CBD5E1;
+        }
+
+        .content h1, .content h2, .content h3, .content h4 {
+            color: #F8FAFC;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .content h1 { font-size: 1.8rem; }
+        .content h2 {
+            font-size: 1.4rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .content h3 { font-size: 1.2rem; color: #A78BFA; }
+
+        .content p {
+            margin-bottom: 1rem;
+        }
+
+        .content a {
+            color: #6366F1;
+            text-decoration: none;
+            border-bottom: 1px solid rgba(99, 102, 241, 0.3);
+            transition: all 0.2s;
+        }
+
+        .content a:hover {
+            color: #A78BFA;
+            border-bottom-color: #A78BFA;
+        }
+
+        .content ul, .content ol {
+            margin-bottom: 1rem;
+            padding-left: 1.5rem;
+        }
+
+        .content li {
+            margin-bottom: 0.4rem;
+        }
+
+        .content code {
+            background: rgba(255, 255, 255, 0.06);
+            padding: 0.15em 0.4em;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9em;
+            color: #A78BFA;
+        }
+
+        .content pre {
+            background: #1E293B;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            padding: 1.2rem;
+            overflow-x: auto;
+            margin-bottom: 1.5rem;
+        }
+
+        .content pre code {
+            background: none;
+            padding: 0;
+            color: #F8FAFC;
+            font-size: 0.85em;
+        }
+
+        .content blockquote {
+            border-left: 3px solid #6366F1;
+            padding-left: 1rem;
+            margin: 1.5rem 0;
+            color: #94A3B8;
+            font-style: italic;
+        }
+
+        .content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 1.5rem;
+        }
+
+        .content th, .content td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .content th {
+            background: rgba(99, 102, 241, 0.1);
+            color: #A78BFA;
+            font-weight: 600;
+        }
+
+        .content hr {
+            border: none;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            margin: 2rem 0;
+        }
+
+        .footer {
+            margin-top: 4rem;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            text-align: center;
+            color: #475569;
+            font-size: 0.85rem;
+        }
+
+        .footer a {
+            color: #6366F1;
+            text-decoration: none;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1.5rem 1rem;
+            }
+            .header h1 {
+                font-size: 1.5rem;
+            }
+            .meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+        }
+
+        /* Highlight override for dark theme */
+        .highlight {
+            background: #1E293B !important;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>{{ title }}</h1>
+            <div class="meta">
+                <span class="meta-item">📅 {{ date }}</span>
+                <span class="meta-item">📁 {{ project_name }}</span>
+                <span class="meta-item">📝 {{ style }}</span>
+            </div>
+            {% if tech_stack %}
+            <div class="tags">
+                {% for tag in tech_stack %}
+                <span class="tag">{{ tag }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </header>
+
+        <article class="content">
+            {{ content }}
+        </article>
+
+        <footer class="footer">
+            <p>Generated by <a href="https://github.com/devdiary">DevDiary</a> &copy; {{ year }}</p>
+        </footer>
+    </div>
+</body>
+</html>
