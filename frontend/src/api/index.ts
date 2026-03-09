@@ -13,6 +13,9 @@ import type {
   SettingsResponse,
   SettingsUpdate,
   BatchDeleteResponse,
+  AnnualReport,
+  WatcherStatus,
+  WatcherConfig,
 } from '@/types'
 
 const api = axios.create({
@@ -147,6 +150,40 @@ export async function fetchSettings(): Promise<SettingsResponse> {
 export async function updateSettings(data: SettingsUpdate): Promise<SettingsResponse> {
   const { data: result } = await api.put('/settings', data)
   return result
+}
+
+// ---- Annual Report API ----
+
+export async function fetchAnnualReport(year: number): Promise<AnnualReport> {
+  const { data } = await api.get('/report', { params: { year } })
+  return data
+}
+
+// ---- Watcher API ----
+
+export async function fetchWatcherStatus(): Promise<WatcherStatus> {
+  const { data } = await api.get('/watcher/status')
+  return data
+}
+
+export async function startWatcher(): Promise<{ message: string; running: boolean }> {
+  const { data } = await api.post('/watcher/start')
+  return data
+}
+
+export async function stopWatcher(): Promise<{ message: string; running: boolean }> {
+  const { data } = await api.post('/watcher/stop')
+  return data
+}
+
+export async function fetchWatcherConfig(): Promise<WatcherConfig> {
+  const { data } = await api.get('/watcher/config')
+  return data
+}
+
+export async function updateWatcherConfig(config: WatcherConfig): Promise<WatcherConfig> {
+  const { data } = await api.put('/watcher/config', config)
+  return data
 }
 
 // ---- Health ----

@@ -15,6 +15,8 @@ from devdiary.api.routes.diaries import router as diaries_router
 from devdiary.api.routes.projects import router as projects_router
 from devdiary.api.routes.stats import router as stats_router
 from devdiary.api.routes.settings import router as settings_router
+from devdiary.api.routes.report import router as report_router
+from devdiary.api.routes.watcher import router as watcher_router
 
 
 @asynccontextmanager
@@ -24,6 +26,8 @@ async def lifespan(app: FastAPI):  # type: ignore
     await init_db()
     yield
     # Shutdown
+    from devdiary.watcher import stop_watcher
+    await stop_watcher()
     await close_db()
 
 
@@ -54,6 +58,8 @@ def create_app() -> FastAPI:
     app.include_router(projects_router)
     app.include_router(stats_router)
     app.include_router(settings_router)
+    app.include_router(report_router)
+    app.include_router(watcher_router)
 
     # Health check
     @app.get("/api/health")

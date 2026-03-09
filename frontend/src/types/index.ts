@@ -165,3 +165,78 @@ export interface SettingsUpdate {
 export interface BatchDeleteResponse {
   deleted_count: number
 }
+
+// ---- Annual Report types ----
+
+/** Annual report summary stats */
+export interface AnnualReportSummary {
+  total_commits: number
+  total_diaries: number
+  total_insertions: number
+  total_deletions: number
+  total_files_changed: number
+  total_active_days: number
+  total_projects: number
+}
+
+/** Annual report highlights */
+export interface AnnualReportHighlights {
+  best_month: string
+  best_month_commits: number
+  busiest_date: string
+  busiest_date_commits: number
+  most_active_day: string
+  peak_hour: string
+  longest_streak: number
+  longest_streak_start: string
+}
+
+/** Annual report achievement */
+export interface AnnualReportAchievement {
+  icon: string
+  title: string
+  desc: string
+}
+
+/** Full annual report response */
+export interface AnnualReport {
+  year: number
+  generated_at: string
+  summary: AnnualReportSummary
+  highlights: AnnualReportHighlights
+  monthly_trend: { month: string; commits: number; insertions: number; deletions: number }[]
+  active_days_trend: { month: string; active_days: number }[]
+  project_ranking: { name: string; commits: number }[]
+  language_ranking: { language: string; count: number; percentage: number }[]
+  achievements: AnnualReportAchievement[]
+}
+
+// ---- Watcher types ----
+
+/** Watcher configuration */
+export interface WatcherConfig {
+  enabled: boolean
+  schedule: string
+  time: string
+  weekday: string
+  auto_scan: boolean
+  notify_desktop: boolean
+  notify_email: string | null
+  notify_webhook: string | null
+}
+
+/** Watcher runtime state */
+export interface WatcherStateInfo {
+  running: boolean
+  last_check: string | null
+  last_generated: string | null
+  next_run: string | null
+  diaries_generated: number
+  errors: string[]
+}
+
+/** Watcher status response (config + state) */
+export interface WatcherStatus {
+  config: WatcherConfig
+  state: WatcherStateInfo
+}

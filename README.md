@@ -20,6 +20,8 @@ DevDiary 是一个面向开发者的智能日记工具，通过分析 Git 提交
 - 🌐 **Web Dashboard** — 精美的响应式 Web 界面，可视化展示你的编程轨迹
 - 📊 **真实数据统计** — 提交趋势图、编码时间热力图、语言分布、项目活跃度，全部基于真实 Git 数据
 - 💡 **智能洞察** — 自动分析最活跃时段、最活跃项目、连续编码天数等
+- 🏆 **年度开发者报告** — 类似 GitHub Wrapped / Spotify Wrapped，全面回顾你的年度编码轨迹
+- 🔍 **Git 实时监听** — 后台自动监听仓库变更，定时/推送触发自动生成日记
 
 ## 📸 页面一览
 
@@ -30,6 +32,8 @@ DevDiary 是一个面向开发者的智能日记工具，通过分析 Git 提交
 | 📖 日记详情 | Markdown 渲染的日记内容，支持代码高亮 |
 | 📁 项目管理 | 管理 Git 仓库，查看项目统计 |
 | 📊 统计概览 | 提交趋势图、编码热力图、语言分布、智能洞察 |
+| 🏆 年度报告 | 年度总结、月度趋势、项目排行、语言分布、成就系统 |
+| 🔍 Git 监听 | 服务状态管理、调度配置、通知设置 |
 
 ## 🚀 快速开始
 
@@ -77,6 +81,15 @@ devdiary month
 
 # 自定义日期范围
 devdiary generate --from 2026-03-01 --to 2026-03-07
+
+# 年度开发者报告
+devdiary report
+devdiary report --year 2025
+
+# Git 实时监听
+devdiary watch             # 查看状态
+devdiary watch --start     # 启动后台监听
+devdiary watch --stop      # 停止监听
 ```
 
 ### 启动 Web 服务
@@ -124,6 +137,27 @@ output:
 | 智谱 GLM | `glm-4-flash`, `glm-4` | 默认 |
 | 工蜂 AI | — | 内部地址 |
 
+### Git 监听配置
+
+监听服务的配置文件位于 `.devdiary/watch.yaml`：
+
+```yaml
+enabled: true
+schedule: daily          # daily / weekly / on_push
+time: "09:00"            # 每日/每周执行时间 (HH:MM)
+weekday: monday          # weekly 模式下的执行日
+auto_scan: true
+notify:
+  desktop: true          # 桌面通知
+  email: null            # 邮箱通知（留空则不发送）
+  webhook: null          # 飞书/钉钉/Slack Webhook URL
+```
+
+调度模式说明：
+- **daily** — 每天指定时间自动扫描并生成日记
+- **weekly** — 每周指定日期和时间生成周报
+- **on_push** — 每 5 分钟检查一次，发现新提交立即生成
+
 ## 🔗 API 文档
 
 启动后端后访问：
@@ -144,6 +178,12 @@ output:
 | `GET` | `/api/stats/commit-trend` | 每日提交趋势 |
 | `GET` | `/api/stats/heatmap` | 编码时间热力图 |
 | `GET` | `/api/stats/insights` | 智能数据洞察 |
+| `GET` | `/api/report` | 年度开发者报告 |
+| `GET` | `/api/watcher/status` | 获取 Watcher 状态 |
+| `POST` | `/api/watcher/start` | 启动 Watcher |
+| `POST` | `/api/watcher/stop` | 停止 Watcher |
+| `GET` | `/api/watcher/config` | 获取监听配置 |
+| `PUT` | `/api/watcher/config` | 更新监听配置 |
 | `GET` | `/api/health` | 健康检查 |
 
 ## 🛠️ 技术栈
@@ -166,7 +206,9 @@ DevDiary/
 │   │   ├── routes/            # 路由模块
 │   │   │   ├── diaries.py     # 日记 CRUD + AI 生成
 │   │   │   ├── projects.py    # 项目管理
-│   │   │   └── stats.py       # 统计聚合 API
+│   │   │   ├── stats.py       # 统计聚合 API
+│   │   │   ├── report.py      # 年度开发者报告 API
+│   │   │   └── watcher.py     # Git 监听管理 API
 │   │   ├── app.py             # 应用工厂
 │   │   └── schemas.py         # Pydantic 数据模型
 │   ├── scanner/               # Git 扫描引擎
@@ -174,6 +216,7 @@ DevDiary/
 │   ├── generator/             # AI 内容生成（Provider 抽象）
 │   ├── renderer/              # 输出渲染（Markdown/HTML）
 │   ├── cli/                   # CLI 工具
+│   ├── watcher.py             # Git 实时监听服务
 │   ├── models.py              # SQLAlchemy ORM 模型
 │   ├── database.py            # 数据库连接管理
 │   └── config.py              # 配置加载
@@ -184,7 +227,9 @@ DevDiary/
 │       │   ├── DiaryListView.vue  # 日记列表
 │       │   ├── DiaryDetailView.vue# 日记详情
 │       │   ├── ProjectsView.vue   # 项目管理
-│       │   └── StatsView.vue      # 统计概览
+│       │   ├── StatsView.vue      # 统计概览
+│       │   ├── AnnualReportView.vue # 年度报告
+│       │   └── WatcherView.vue    # Git 监听管理
 │       ├── components/        # 通用组件
 │       │   ├── AppLayout.vue      # 响应式布局
 │       │   ├── GenerateDialog.vue # 日记生成对话框
@@ -224,6 +269,16 @@ npm run build        # 生产构建
 
 ## 📋 版本历史
 
+### V0.4 — 年度报告 & Git 实时监听
+- 🏆 **年度开发者报告** — 类似 GitHub Wrapped，年度总结、月度趋势、项目排行榜、语言分布、成就系统
+- 🔍 **Git 实时监听** — 后台 Watcher 服务，支持每天/每周/推送后三种调度模式，自动扫描仓库生成日记
+- 📡 **Watcher 管理面板** — 启动/停止、状态监控、调度配置、通知设置（桌面/邮箱/Webhook）
+- 📊 **4 个可视化图表** — 月度提交趋势（柱状图）、活跃天数（面积图）、项目排行（横向柱状图）、语言分布（环形图）
+- 💻 **CLI 新增命令** — `devdiary report` 年度报告、`devdiary watch` 监听服务管理
+- 🎖️ **成就系统** — 自动解锁编码成就（千次提交、夜猫子、全栈工程师、周末战士等）
+
+### V0.3 — 日记管理增强
+
 ### V0.2 — 统计数据真实化
 - ✨ 新增 3 个统计聚合 API（提交趋势、编码热力图、智能洞察）
 - 📊 统计概览页面全部图表改为真实 Git 数据驱动
@@ -261,6 +316,8 @@ DevDiary is an intelligent diary tool for developers that automatically generate
 - 🌐 **Web Dashboard** — Beautiful responsive web UI to visualize your coding journey
 - 📊 **Real Data Analytics** — Commit trends, coding heatmap, language distribution — all driven by real Git data
 - 💡 **Smart Insights** — Automatic analysis of peak coding hours, most active projects, coding streaks, and more
+- 🏆 **Annual Developer Report** — GitHub Wrapped-style yearly coding recap with achievements
+- 🔍 **Git Real-time Watcher** — Background service that monitors repos and auto-generates diaries on schedule
 
 ## 🚀 Quick Start
 
@@ -285,6 +342,14 @@ devdiary month
 
 # Custom date range
 devdiary generate --from 2026-03-01 --to 2026-03-07
+
+# Annual developer report
+devdiary report
+
+# Git watcher
+devdiary watch             # Show status
+devdiary watch --start     # Start background watcher
+devdiary watch --stop      # Stop watcher
 
 # Launch backend API
 uvicorn src.devdiary.api.app:app --reload --port 8000

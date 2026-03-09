@@ -11,6 +11,8 @@ import {
   MenuOutline,
   ChevronBackOutline,
   SettingsOutline,
+  TrophyOutline,
+  EyeOutline,
 } from '@vicons/ionicons5'
 import { h } from 'vue'
 
@@ -59,6 +61,16 @@ const menuOptions: MenuOption[] = [
     label: '统计概览',
     key: 'stats',
     icon: renderIcon(StatsChartOutline),
+  },
+  {
+    label: '年度报告',
+    key: 'report',
+    icon: renderIcon(TrophyOutline),
+  },
+  {
+    label: 'Git 监听',
+    key: 'watcher',
+    icon: renderIcon(EyeOutline),
   },
   {
     label: '系统设置',

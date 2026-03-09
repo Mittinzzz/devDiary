@@ -349,6 +349,232 @@ def generate(config_dir: str, repo: Optional[str], style: Optional[str], output_
     )
 
 
+@cli.command()
+@click.option("--config-dir", default=".devdiary", help="Configuration directory")
+@click.option("--year", "-y", default=None, type=int, help="Year for the report (default: current year)")
+def report(config_dir: str, year: Optional[int]) -> None:
+    """📊 Generate annual developer report.
+
+    \b
+    Shows a comprehensive summary of your year: total commits, active days,
+    achievements, language distribution, monthly trends, and more.
+
+    \b
+    Examples:
+      devdiary report              # Current year
+      devdiary report --year 2025  # Specific year
+    """
+    _banner()
+
+    report_year = year or datetime.now(tz=timezone.utc).year
+    console.print(f"[bold]Generating {report_year} Annual Developer Report...[/bold]\n")
+
+    config = Config.load(config_dir)
+    if not config.config_path.exists():
+        console.print("[red]❌ DevDiary not initialized. Run [bold]devdiary init[/bold] first.[/red]")
+        sys.exit(1)
+
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        console=console,
+    ) as progress:
+        task = progress.add_task("Aggregating annual data...", total=None)
+
+        async def _generate_report():
+            from devdiary.database import init_db, get_db_session
+            from devdiary.models import Project, Commit, Diary
+            from sqlalchemy import select
+            from collections import Counter, defaultdict
+
+            await init_db()
+
+            year_start = datetime(report_year, 1, 1, tzinfo=timezone.utc)
+            year_end = datetime(report_year, 12, 31, 23, 59, 59, tzinfo=timezone.utc)
+
+            async with get_db_session() as session:
+                commit_result = await session.execute(
+                    select(Commit).where(Commit.date >= year_start, Commit.date <= year_end)
+                )
+                commits = list(commit_result.scalars().all())
+
+                diary_result = await session.execute(
+                    select(Diary).where(Diary.created_at >= year_start, Diary.created_at <= year_end)
+                )
+                diaries = list(diary_result.scalars().all())
+
+                project_result = await session.execute(select(Project))
+                projects = list(project_result.scalars().all())
+
+            return commits, diaries, projects
+
+        commits, diaries, projects = _run_async(_generate_report())
+        progress.update(task, description=f"Found {len(commits)} commits, {len(diaries)} diaries", completed=True)
+
+    if not commits:
+        console.print(f"[yellow]⚠ No commits found for {report_year}.[/yellow]")
+        return
+
+    # ── Compute stats ──
+    total_insertions = sum(c.insertions or 0 for c in commits)
+    total_deletions = sum(c.deletions or 0 for c in commits)
+    date_set = set(c.date.strftime("%Y-%m-%d") for c in commits)
+
+    from collections import Counter, defaultdict
+
+    monthly_commits: dict[int, int] = defaultdict(int)
+    for c in commits:
+        monthly_commits[c.date.month] += 1
+
+    proj_commits: Counter = Counter()
+    for c in commits:
+        proj_commits[c.project_id] += 1
+    proj_map = {p.id: p.name for p in projects}
+
+    hour_counts: Counter = Counter()
+    for c in commits:
+        hour_counts[c.date.hour] += 1
+    peak_hour = hour_counts.most_common(1)[0][0] if hour_counts else 0
+
+    # Longest streak
+    longest_streak = 0
+    current_streak = 0
+    check = datetime(report_year, 1, 1, tzinfo=timezone.utc)
+    now = datetime.now(tz=timezone.utc)
+    while check <= datetime(report_year, 12, 31, tzinfo=timezone.utc) and check <= now:
+        if check.strftime("%Y-%m-%d") in date_set:
+            current_streak += 1
+            if current_streak > longest_streak:
+                longest_streak = current_streak
+        else:
+            current_streak = 0
+        check += timedelta(days=1)
+
+    # ── Display Report ──
+    console.print()
+    console.print(Panel(
+        f"[bold magenta]🎉 {report_year} 年度开发者报告[/bold magenta]",
+        border_style="bright_magenta",
+    ))
+
+    # Summary table
+    summary_table = Table(title="📊 年度总览", border_style="blue")
+    summary_table.add_column("指标", style="cyan")
+    summary_table.add_column("数值", style="bold white", justify="right")
+    summary_table.add_row("总提交数", f"{len(commits):,}")
+    summary_table.add_row("总新增行数", f"+{total_insertions:,}")
+    summary_table.add_row("总删除行数", f"-{total_deletions:,}")
+    summary_table.add_row("活跃天数", str(len(date_set)))
+    summary_table.add_row("生成日记", f"{len(diaries)} 篇")
+    summary_table.add_row("活跃项目", str(len(proj_commits)))
+    summary_table.add_row("最长连续编码", f"{longest_streak} 天")
+    summary_table.add_row("最高效时段", f"{peak_hour:02d}:00-{peak_hour+1:02d}:00")
+    console.print(summary_table)
+
+    # Monthly trend
+    month_names = ["1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月"]
+    console.print()
+    month_table = Table(title="📈 月度提交趋势", border_style="green")
+    month_table.add_column("月份", style="cyan")
+    month_table.add_column("提交数", justify="right")
+    month_table.add_column("图表")
+    max_monthly = max(monthly_commits.values()) if monthly_commits else 1
+    for m in range(1, 13):
+        cnt = monthly_commits.get(m, 0)
+        bar_len = int(cnt / max_monthly * 30) if max_monthly else 0
+        bar = "█" * bar_len
+        month_table.add_row(month_names[m-1], str(cnt), f"[magenta]{bar}[/magenta]")
+    console.print(month_table)
+
+    # Project ranking
+    console.print()
+    proj_table = Table(title="🏆 项目排行榜", border_style="yellow")
+    proj_table.add_column("#", style="dim", width=3)
+    proj_table.add_column("项目", style="cyan")
+    proj_table.add_column("提交数", justify="right")
+    for i, (pid, cnt) in enumerate(proj_commits.most_common(10), 1):
+        proj_table.add_row(str(i), proj_map.get(pid, f"Project #{pid}"), str(cnt))
+    console.print(proj_table)
+
+    console.print()
+    console.print("[dim]💡 在 Web Dashboard 查看更多可视化图表: http://localhost:3000/report[/dim]")
+    console.print()
+
+
+@cli.command()
+@click.option("--config-dir", default=".devdiary", help="Configuration directory")
+@click.option("--start", "action", flag_value="start", help="Start the watcher service")
+@click.option("--stop", "action", flag_value="stop", help="Stop the watcher service")
+@click.option("--status", "action", flag_value="status", default=True, help="Show watcher status (default)")
+def watch(config_dir: str, action: str) -> None:
+    """🔍 Manage the Git watcher service.
+
+    \b
+    The watcher monitors your Git repositories and automatically generates
+    development diaries based on the configured schedule.
+
+    \b
+    Examples:
+      devdiary watch                # Show status
+      devdiary watch --start        # Start watcher
+      devdiary watch --stop         # Stop watcher
+    """
+    _banner()
+
+    from devdiary.watcher import WatchConfig, get_watcher_state
+
+    watch_config = WatchConfig.load(config_dir)
+
+    if action == "status":
+        state = get_watcher_state()
+        console.print(Panel("[bold]🔍 Git Watcher 状态[/bold]", border_style="blue"))
+
+        status_table = Table(border_style="blue")
+        status_table.add_column("项目", style="cyan")
+        status_table.add_column("状态", style="white")
+        status_table.add_row("运行状态", "[green]运行中[/green]" if state.running else "[dim]已停止[/dim]")
+        status_table.add_row("调度模式", {"daily": "每天", "weekly": "每周", "on_push": "推送后"}.get(watch_config.schedule, watch_config.schedule))
+        status_table.add_row("执行时间", watch_config.time)
+        if watch_config.schedule == "weekly":
+            status_table.add_row("执行日期", watch_config.weekday)
+        status_table.add_row("上次检查", state.last_check or "从未")
+        status_table.add_row("上次生成", state.last_generated or "从未")
+        status_table.add_row("已生成日记", f"{state.diaries_generated} 篇")
+        console.print(status_table)
+
+        if state.errors:
+            console.print("\n[yellow]⚠ 最近错误:[/yellow]")
+            for err in state.errors[-3:]:
+                console.print(f"  [dim]{err}[/dim]")
+
+        console.print(f"\n[dim]配置文件: {Path(config_dir) / 'watch.yaml'}[/dim]")
+        console.print("[dim]💡 使用 --start 启动监听, --stop 停止监听[/dim]")
+
+    elif action == "start":
+        console.print("[bold]启动 Git Watcher...[/bold]\n")
+        console.print(f"  调度模式: [cyan]{watch_config.schedule}[/cyan]")
+        console.print(f"  执行时间: [cyan]{watch_config.time}[/cyan]")
+        if watch_config.schedule == "weekly":
+            console.print(f"  执行日期: [cyan]{watch_config.weekday}[/cyan]")
+        console.print()
+
+        try:
+            from devdiary.watcher import run_watcher
+            console.print("[green]🔍 Watcher 已启动，按 Ctrl+C 停止...[/green]\n")
+            _run_async(run_watcher(config_dir))
+        except KeyboardInterrupt:
+            console.print("\n[yellow]Watcher 已停止[/yellow]")
+
+    elif action == "stop":
+        console.print("[bold]停止 Git Watcher...[/bold]")
+        try:
+            from devdiary.watcher import stop_watcher as _stop_watcher
+            _run_async(_stop_watcher())
+            console.print("[green]✅ Watcher 已停止[/green]")
+        except Exception as e:
+            console.print(f"[red]❌ 停止失败: {e}[/red]")
+
+
 def _parse_date(date_str: str) -> datetime:
     """Parse a date string (YYYY-MM-DD) to datetime at 00:00:00 UTC."""
     try:
